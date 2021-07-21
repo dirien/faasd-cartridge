@@ -1,0 +1,88 @@
+# This is the configuration for Porter
+# You must define steps for each action, but the rest is optional
+# See https://porter.sh/author-bundles for documentation on how to configure your bundle
+# Uncomment out the sections below to take full advantage of what Porter can do!
+
+name: civo-openfaas-cartridge
+version: 7.4.0
+description: "Building a porter bundle for civo"
+registry: docker.io
+
+mixins:
+  - terraform:
+      clientVersion: 1.0.1
+  - kubernetes:
+      clientVersion: v1.21.2
+  - helm3:
+      repositories:
+        openfaas:
+          url: "https://openfaas.github.io/faas-netes/"
+
+credentials:
+  - name: backend_storage_access_key
+    env: ARM_ACCESS_KEY
+
+  - name: token
+    env: CIVO_TOKEN
+
+parameters:
+  - name: storage_account_name
+    type: string
+
+  - name: storage_container_name
+    type: string
+
+  - name: name
+    type: string
+    default: "civo-openfaas"
+
+  - name: kubeconfig
+    type: file
+    path: /root/.kube/config
+    default: "/root/.kube/config"
+    source:
+      output: kubeconfig
+
+install:
+  - terraform:
+      description: "Create Civo Kubernetes Cluster"
+      input: false
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+      vars:
+        token: "{{bundle.credentials.token}}"
+        name: "{{bundle.parameters.name}}"
+      outputs:
+        - name: kubeconfig
+  - kubernetes:
+      description: "create namespaces openfaas"
+      manifests:
+        - manifests/openfaas
+      wait: true
+  - helm3:
+      description: "Install the openfaas"
+      name: "openfaas"
+      chart: openfaas/openfaas
+      version: 7.4.0
+      namespace: "openfaas"
+      replace: true
+      set:
+        functionNamespace: openfaas-fn
+        generateBasicAuth: true
+        serviceType: LoadBalancer
+
+uninstall:
+  - terraform:
+      description: "Delete Civo Kubernetes Cluster"
+      input: false
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+      vars:
+        token: "{{bundle.credentials.token}}"
+        name: "{{bundle.parameters.name}}"

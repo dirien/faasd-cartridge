@@ -1,0 +1,56 @@
+# This is the configuration for Porter
+# You must define steps for each action, but the rest is optional
+# See https://porter.sh/author-bundles for documentation on how to configure your bundle
+# Uncomment out the sections below to take full advantage of what Porter can do!
+
+name: faasd-do-cartridge
+version: 0.11.4
+description: "faasd cartdrige for DigitalOcean"
+registry: docker.io
+
+mixins:
+  - exec
+  - terraform:
+      clientVersion: 1.0.1
+
+credentials:
+  - name: backend_storage_access_key
+    env: ARM_ACCESS_KEY
+  - name: do_token
+    env: TF_VAR_do_token
+
+parameters:
+  - name: storage_account_name
+    type: string
+
+  - name: storage_container_name
+    type: string
+
+  - name: do_region
+    env: TF_VAR_region
+
+  - name: do_size
+    env: TF_VAR_size
+
+  - name: ssh_pub_file
+    env: TF_VAR_ssh_pub_file
+
+install:
+  - terraform:
+      description: "Install Faasd on DigitalOcean"
+      input: false
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+
+uninstall:
+  - terraform:
+      description: "Uninstall Faasd on DigitalOcean"
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+
