@@ -1,0 +1,63 @@
+# This is the configuration for Porter
+# You must define steps for each action, but the rest is optional
+# See https://porter.sh/author-bundles for documentation on how to configure your bundle
+# Uncomment out the sections below to take full advantage of what Porter can do!
+
+name: faasd-stackit-cartridge
+version: 0.11.4
+description: "faasd cartdrige for STACKIT"
+registry: docker.io
+
+mixins:
+  - exec
+  - terraform:
+      clientVersion: 1.0.1
+
+credentials:
+  - name: backend_storage_access_key
+    env: ARM_ACCESS_KEY
+
+  - name: openstack_auth_url
+    env: TF_VAR_auth_url
+
+  - name: openstack_user_name
+    env: TF_VAR_user_name
+
+  - name: openstack_password
+    env: TF_VAR_password
+
+  - name: openstack_user_domain_id
+    env: TF_VAR_user_domain_id
+
+  - name: openstack_region
+    env: TF_VAR_region
+
+  - name: ssh_pub_file
+    env: TF_VAR_ssh_pub_file
+
+parameters:
+  - name: storage_account_name
+    type: string
+
+  - name: storage_container_name
+    type: string
+
+install:
+  - terraform:
+      description: "Install Faasd on STACKIT"
+      input: false
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+
+uninstall:
+  - terraform:
+      description: "Uninstall Faasd on STACKIT"
+      backendConfig:
+        key: "{{ bundle.name }}.tfstate"
+        storage_account_name: "{{ bundle.parameters.storage_account_name }}"
+        container_name: "{{ bundle.parameters.storage_container_name }}"
+        access_key: "{{ bundle.credentials.backend_storage_access_key }}"
+
