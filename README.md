@@ -67,9 +67,9 @@ Dont forget to set the DIGITALOCEAN_TOKEN in the porter credentials call.
 
 ```bash
 export DIGITALOCEAN_TOKEN=xxx
-porter parameters generate openfaas-do-params 
-porter credential generate openfaas-do-cred
-porter install -c openfaas-do-cred -p openfaas-do-params
+porter parameters generate faasd-do-params 
+porter credential generate faasd-do-cred
+porter install -c faasd-do-cred -p faasd-do-params
 ```
 
 ### civo-openfaas-cartridge
